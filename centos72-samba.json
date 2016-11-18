@@ -1,0 +1,116 @@
+{
+    "_comment": "Build with `packer build centos72-samba.json`",
+    "builders": [
+        {
+            "boot_command": [
+                "<tab> text ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/ks.cfg<enter><wait>"
+            ],
+            "disk_size": "{{ user `disk_size` }}",
+            "hard_drive_interface": "sata",
+            "headless": "{{ user `headless` }}",
+            "http_directory": "http",
+            "iso_checksum": "{{ user `iso_checksum` }}",
+            "iso_checksum_type": "{{ user `iso_checksum_type` }}",
+            "iso_urls": [
+                "{{ user `iso_path` }}/{{ user `iso_name` }}",
+                "{{ user `iso_url` }}"
+            ],
+            "output_directory": "output-{{ user `vm_name` }}-virtualbox-iso",
+            "guest_os_type": "RedHat_64",
+            "guest_additions_path": "VBoxGuestAdditions_{{.Version}}.iso",
+            "shutdown_command": "{{ user `shutdown_command` }}",
+            "ssh_password": "{{ user `ssh_password` }}",
+            "ssh_username": "{{ user `ssh_username` }}",
+            "ssh_pty" : "true",
+            "ssh_wait_timeout": "10000s",
+            "type": "virtualbox-iso",
+            "vboxmanage": [
+                [
+                    "modifyvm", "{{.Name}}", "--memory", "{{ user `memory` }}"
+                ],
+                [
+                    "modifyvm", "{{.Name}}", "--cpus", "{{ user `cpus` }}"
+                ]
+            ],
+            "virtualbox_version_file": ".vbox_version",
+            "vm_name": "{{ user `vm_name` }}"
+        }
+    ],
+    "post-processors": [
+        [{
+            "type": "vagrant",
+            "keep_input_artifact": false
+        },
+        {
+            "type": "atlas",
+            "only": ["virtualbox-iso"],
+            "artifact": "javabudd/centos72-samba",
+            "artifact_type": "vagrant.box",
+            "metadata": {
+                "provider": "virtualbox",
+                "version": "0.1.2"
+            }
+        }]
+    ],
+    "provisioners": [
+        {
+            "environment_vars": [
+                "DESKTOP={{user `desktop`}}",
+                "DOCKER={{user `docker`}}",
+                "UPDATE={{user `update`}}",
+                "INSTALL_VAGRANT_KEY={{user `install_vagrant_key`}}",
+                "SSH_USERNAME={{user `ssh_username`}}",
+                "SSH_PASSWORD={{user `ssh_password`}}",
+                "http_proxy={{user `http_proxy`}}",
+                "https_proxy={{user `https_proxy`}}",
+                "ftp_proxy={{user `ftp_proxy`}}",
+                "rsync_proxy={{user `rsync_proxy`}}",
+                "no_proxy={{user `no_proxy`}}"
+            ],
+            "execute_command": "echo 'vagrant' | {{.Vars}} sudo -E -S bash '{{.Path}}'",
+            "scripts": [
+                "script/sysctl.sh",
+                "script/fix-slow-dns.sh",
+                "script/disable-ipv6.sh",
+                "script/sshd.sh",
+                "script/update.sh",
+                "script/vagrant.sh",
+                "script/virtualbox.sh",
+                "script/docker.sh",
+                "script/motd.sh",
+                "script/samba.sh",
+                "script/aws.sh",
+                "script/cleanup.sh"
+            ],
+            "type": "shell"
+        }
+    ],
+    "variables": {
+        "cm": "nocm",
+        "cm_version": "",
+        "cpus": "1",
+        "custom_script": ".",
+        "desktop": "false",
+        "disk_size": "65536",
+        "docker": "false",
+        "ftp_proxy": "{{env `ftp_proxy`}}",
+        "headless": "",
+        "http_proxy": "{{env `http_proxy`}}",
+        "https_proxy": "{{env `https_proxy`}}",
+        "install_vagrant_key": "true",
+        "iso_checksum": "4c6c65b5a70a1142dadb3c65238e9e97253c0d3a",
+        "iso_checksum_type": "sha1",
+        "iso_name": "CentOS-7-x86_64-DVD-1511.iso",
+        "iso_url": "http://mirror.rackspace.com/CentOS/7/isos/x86_64/CentOS-7-x86_64-DVD-1511.iso",
+        "memory": "512",
+        "no_proxy": "{{env `no_proxy`}}",
+        "rsync_proxy": "{{env `rsync_proxy`}}",
+        "shutdown_command": "echo 'vagrant'|sudo -S shutdown -P now",
+        "ssh_password": "vagrant",
+        "ssh_username": "vagrant",
+        "update": "false",
+        "vagrantfile_template": "",
+        "version": "0.1.2",
+        "vm_name": "centos72-samba"
+    }
+}
